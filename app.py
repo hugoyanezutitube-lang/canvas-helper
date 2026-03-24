@@ -1,104 +1,94 @@
 import streamlit as st
 
-# ====================== MODELO DE APRENDIZAJE AUTOMÁTICO V2.1 (con logo) ======================
-def bot_canvas_respuesta(mensaje: str, nombre: str) -> str:
-    mensaje = mensaje.lower().strip()
-    
-    reglas = {
-        ("hola", "buenas", "saludos", "hey"): f"¡Hola {nombre}! 😊 ¿En qué te ayudo hoy con Canvas LMS?",
-        ("cómo estás", "qué tal"): f"¡Muy bien! ¿Y tú, {nombre}?",
-        ("gracias", "muchas gracias"): f"¡De nada, {nombre}! 🚀",
-        ("adiós", "chau", "hasta luego"): f"¡Hasta pronto, {nombre}! Éxitos en tus cursos 😊",
+# ====================== DATOS DE FAQ (Modelo de Aprendizaje Automático) ======================
+faq_categories = [
+    {"id": "acceso", "title": "🔑 Acceso y Login", "items": [
+        {"question": "¿Cómo accedo a Canvas LMS?", "answer": "Ingresa a tuuniversidad.instructure.com con tu usuario y contraseña institucional."},
+        {"question": "¿Olvidé mi contraseña?", "answer": "En la página de login haz clic en '¿Olvidaste tu contraseña?' e ingresa tu correo institucional."}
+    ]},
+    {"id": "perfil", "title": "👤 Perfil y Foto", "items": [
+        {"question": "¿Cómo editar mi perfil?", "answer": "Menú izquierdo → Cuenta → Perfil → Editar Perfil. Puedes cambiar nombre, biografía y foto."},
+        {"question": "¿Cómo cambiar mi foto de perfil?", "answer": "En Perfil haz clic en el círculo de la foto → Editar → Sube tu imagen."}
+    ]},
+    {"id": "tareas", "title": "📝 Tareas y Entregas", "items": [
+        {"question": "¿Cómo subir una tarea?", "answer": "Curso → Tareas → Selecciona la tarea → Enviar tarea → Sube archivo o texto → Enviar."},
+        {"question": "¿Puedo entregar después de la fecha límite?", "answer": "Solo si el profesor habilitó entregas tardías. Revisa la tarea."}
+    ]},
+    {"id": "calificaciones", "title": "📊 Calificaciones", "items": [
+        {"question": "¿Cómo veo mis notas?", "answer": "Menú izquierdo del curso → Calificaciones."}
+    ]},
+    {"id": "modulos", "title": "📚 Módulos y Contenido", "items": [
+        {"question": "¿Dónde están los módulos?", "answer": "Menú izquierdo → Módulos. Todo el contenido está organizado por semanas."}
+    ]},
+    {"id": "quizzes", "title": "❓ Quizzes y Exámenes", "items": [
+        {"question": "¿Cómo hago un quiz?", "answer": "Ve a Tareas o Quizzes → Haz clic en el quiz → Responde sin cerrar la ventana."}
+    ]},
+    {"id": "discusiones", "title": "💬 Discusiones", "items": [
+        {"question": "¿Cómo participar en una discusión?", "answer": "Menú izquierdo → Discusiones → Elige el tema → Responder."}
+    ]}
+]
 
-        # Todas las reglas anteriores (perfil, tareas, calificaciones, etc.)
-        ("editar perfil", "cambiar perfil", "foto de perfil", "perfil"): 
-            "Para editar tu perfil:\n1. Menú izquierdo → **Cuenta** → **Perfil**\n2. Clic en **Editar Perfil**\n3. Cambia nombre, biografía o foto.\n4. Guarda.",
-        
-        ("subir tarea", "entregar tarea", "enviar assignment", "cómo subir"): 
-            "Para subir una tarea:\n1. Entra al curso → **Tareas**\n2. Selecciona la tarea\n3. Clic en **Enviar tarea**\n4. Sube archivo o escribe\n5. Clic en **Enviar**.",
-        
-        ("calificaciones", "ver notas", "grades", "notas"): 
-            "Ve al menú izquierdo del curso → **Calificaciones**.",
-        
-        ("contraseña", "olvidé contraseña", "resetear"): 
-            "En la página de login → **¿Olvidaste tu contraseña?** → ingresa tu correo institucional.",
-        
-        ("módulos", "ver módulos"): 
-            "Menú izquierdo → **Módulos**.",
-        
-        ("quiz", "examen", "prueba"): 
-            "Ve a **Tareas** o **Quizzes** → haz clic en el quiz.",
-        
-        ("ayuda", "faq", "preguntas"): 
-            "¡Estoy aquí para todo! Usa los botones o escribe tu duda.",
-    }
+# ====================== LÓGICA DE FILTRADO (igual que tu React) ======================
+def filtrar_items(query: str, active_category: str):
+    query = query.lower().strip()
+    if not query:
+        cat = next((c for c in faq_categories if c["id"] == active_category), None)
+        return cat["items"] if cat else [], cat["title"] if cat else ""
     
-    for palabras, respuesta in reglas.items():
-        if any(p in mensaje for p in palabras):
-            return respuesta
-    
-    return f"Entendido, {nombre}. ¿Me das más detalles? 😊"
+    all_matches = []
+    for cat in faq_categories:
+        for item in cat["items"]:
+            if (query in item["question"].lower() or query in item["answer"].lower()):
+                all_matches.append(item)
+    return all_matches, f'Resultados para "{query}"'
 
-# ====================== INTERFAZ CON LOGO ======================
+# ====================== INTERFAZ MODERNA (adaptada del React) ======================
 st.set_page_config(page_title="Canvas Helper Pro", page_icon="🎓", layout="wide")
 
-# Mostrar logo de tu universidad (se carga automáticamente del GitHub)
-st.image("logo.png", width=280)   # ← Aquí aparece tu logo
+# Hero Section + Logo
+col_logo, col_titulo = st.columns([1, 4])
+with col_logo:
+    st.image("logo.png", width=180)
+with col_titulo:
+    st.title("🎓 Canvas Helper Pro")
+    st.markdown("**Universidad Indoamérica** – Tu asistente inteligente de Canvas LMS")
 
-st.title("🎓 Canvas Helper Pro")
-st.markdown("**Tu asistente inteligente de Canvas LMS** – Versión 2.1")
+# Búsqueda (HeroSection)
+search_query = st.text_input("🔍 Busca cualquier duda...", placeholder="Ej: cómo subir tarea, cambiar foto, ver calificaciones...", label_visibility="collapsed")
 
-# El resto del código es igual que antes (nombre, chat, preguntas rápidas, sidebar, etc.)
-if "nombre" not in st.session_state:
-    col1, col2 = st.columns([3,1])
-    with col1:
-        nombre = st.text_input("👤 ¿Cuál es tu nombre?", placeholder="Escribe tu nombre completo...")
-    with col2:
-        if st.button("🚀 Empezar", type="primary"):
-            if nombre.strip():
-                st.session_state.nombre = nombre.strip().title()
+# Categorías (Pills)
+if not search_query:
+    st.markdown("### Selecciona una categoría")
+    cols = st.columns(len(faq_categories))
+    active_category = st.session_state.get("active_category", "acceso")
+    
+    for i, cat in enumerate(faq_categories):
+        with cols[i]:
+            if st.button(cat["title"], key=cat["id"], use_container_width=True,
+                         type="primary" if active_category == cat["id"] else "secondary"):
+                st.session_state.active_category = cat["id"]
                 st.rerun()
-            else:
-                st.warning("Por favor ingresa tu nombre")
+
+# Filtrado
+active_category = st.session_state.get("active_category", "acceso")
+items, title = filtrar_items(search_query, active_category)
+
+# Resultados
+if search_query:
+    st.info(f"**{len(items)} resultado{'s' if len(items) != 1 else ''} encontrado{'s' if len(items) != 1 else ''}**")
+
+if items:
+    st.markdown(f"### {title}")
+    for item in items:
+        with st.expander(item["question"], expanded=False):
+            st.markdown(item["answer"])
 else:
-    st.success(f"¡Bienvenido/a {st.session_state.nombre}! 😊")
+    st.warning("🤔 No se encontraron resultados. Prueba con otras palabras.")
 
-    tab1, tab2 = st.tabs(["💬 Chat Inteligente", "❓ Preguntas Rápidas"])
-
-    with tab1:
-        if "mensajes" not in st.session_state:
-            st.session_state.mensajes = []
-        for msg in st.session_state.mensajes:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-        if prompt := st.chat_input("Escribe tu duda sobre Canvas..."):
-            st.session_state.mensajes.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            respuesta = bot_canvas_respuesta(prompt, st.session_state.nombre)
-            st.session_state.mensajes.append({"role": "assistant", "content": respuesta})
-            with st.chat_message("assistant"):
-                st.markdown(respuesta)
-
-    with tab2:
-        st.markdown("**Haz clic en cualquier botón** para respuesta instantánea:")
-        cols = st.columns(3)
-        preguntas = [
-            "Cómo subir una tarea", "Cómo editar mi perfil", "Cómo ver mis calificaciones",
-            "Olvidé mi contraseña", "Cómo ver los módulos", "Cómo hacer un quiz",
-            "Cómo participar en una discusión", "Cómo subir archivos", "Ver calendario"
-        ]
-        for i, preg in enumerate(preguntas):
-            with cols[i % 3]:
-                if st.button(preg, use_container_width=True):
-                    st.session_state.mensajes.append({"role": "user", "content": preg})
-                    respuesta = bot_canvas_respuesta(preg.lower(), st.session_state.nombre)
-                    st.session_state.mensajes.append({"role": "assistant", "content": respuesta})
-                    st.rerun()
-
-with st.sidebar:
-    st.image("logo.png", width=150)   # Logo también en sidebar
-    st.header("📚 Canvas Helper Pro")
-    st.caption("Versión 2.1 - Con logo de tu universidad")
-
-st.caption("💡 Sube logo.png y Streamlit lo muestra automáticamente")
+# Footer oficial
+st.divider()
+st.markdown(
+    "<p style='text-align:center; color:gray; font-size:0.9em;'>"
+    "Basado en el Manual del Estudiante — Canvas LMS · Universidad Indoamérica © 2026"
+    "</p>", unsafe_allow_html=True
+)
